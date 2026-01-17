@@ -1,23 +1,26 @@
 import pickle
-from flask import Flask,request,jsonify,render_template
+import os
+from flask import Flask, request, jsonify, render_template
 import numpy as np
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
-application=Flask(__name__)
-app=application
-## import ridge regresor model and standard scaler pickle
-ridge_model=pickle.load(open('models/ridge.pkl','rb'))
-standard_scaler=pickle.load(open('models/scaler.pkl','rb'))
+
+application = Flask(__name__)
+app = application
+
+# Load model and scaler
+ridge_model = pickle.load(open('models/ridge.pkl', 'rb'))
+standard_scaler = pickle.load(open('models/scaler.pkl', 'rb'))
 
 # Route for home page
 @app.route('/')
 def index():
     return render_template('index.html')
 
-@app.route('/predictdata',methods=['GET','POST'])
+@app.route('/predictdata', methods=['GET', 'POST'])
 def predict_datapoint():
-    if request.method=='POST':
-        Temperature=float(request.form.get('Temperature'))
+    if request.method == 'POST':
+        Temperature = float(request.form.get('Temperature'))
         RH = float(request.form.get('RH'))
         Ws = float(request.form.get('Ws'))
         Rain = float(request.form.get('Rain'))
@@ -27,14 +30,16 @@ def predict_datapoint():
         Classes = float(request.form.get('Classes'))
         Region = float(request.form.get('Region'))
 
-        new_data_scaled=standard_scaler.transform([[Temperature,RH,Ws,Rain,FFMC,DMC,ISI,Classes,Region]])
-        result=ridge_model.predict(new_data_scaled)
+        new_data_scaled = standard_scaler.transform(
+            [[Temperature, RH, Ws, Rain, FFMC, DMC, ISI, Classes, Region]]
+        )
 
-        return render_template('home.html',result=result[0])
+        result = ridge_model.predict(new_data_scaled)
 
-    else:
-        return render_template('home.html')
+        return render_template('home.html', result=result[0])
 
+    return render_template('home.html')
 
-if __name__=="__main__":
-    app.run(host="0.0.0.0")
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
